@@ -6,8 +6,16 @@
             <tr><td colspan=2><center>General Configuration</center></td></tr>
             <tr>
                 <td>Port<br/><span class='small_red'>Implemented on restart</span></td>
-                <td><input type='text' name='port' value='{{port}}'></td>
+                <td><input type='text' name='port' value='{{config_dict['port']}}'></td>
             </tr>
+	    <tr>
+		<td>Executable:</td>
+		<td><input type='text' name='executable' value='{{config_dict['executable']}}'></td>
+	    </tr>
+	    <tr>
+		<td>Cmd Line Args:</td>
+		<td><input type='text' name='cmd_args' value='{{config_dict['cmd_args']}}'></td>
+	    </tr>
             <tr><td colspan=2><center><input type='submit' value=' Submit ' name='submit'></center></td></tr>
             <tr><td colspan=2>Current Library Paths:</td></tr>
             {% for path in lib_paths %}

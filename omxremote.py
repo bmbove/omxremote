@@ -22,6 +22,7 @@ def startup_checks():
     cursor.execute("CREATE TABLE IF NOT EXISTS config (key INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, value)")
     cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", ['port', '8080'])
     cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", ['executable', '/usr/bin/mplayer'])
+    cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", ['cmd_args', '-fs'])
     conn.commit()
 
 def load_config():
@@ -67,7 +68,7 @@ class omxremote:
         if rw > 0:
             controls.send_cmd(p, "[")
         if play > 0:
-            p = controls.start(config_dict['executable'], play, p)
+            p = controls.start(config_dict['executable'], config_dict['cmd_args'], play, p)
         
         return controls.get_playing()
 
@@ -115,7 +116,7 @@ class omxremote:
     def playlist(self):
         return "playlist"
 
-    def settings(self, remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '0'):
+    def settings(self, remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '0', cmd_args = '', executable = ''):
         conn = sqlite3.connect("remote.db")
         cursor = conn.cursor()
         
@@ -138,12 +139,20 @@ class omxremote:
             else:
                 cursor.execute("DELETE FROM library WHERE path=?", [path])
             conn.commit()
+	if cmd_args != '':
+		cursor.execute("UPDATE config SET value=? WHERE name='cmd_args'", [cmd_args])
+		conn.commit()
+		config_dict['cmd_args'] = cmd_args
+	if executable != '':
+		cursor.execute("UPDATE config SET value=? WHERE name='executable'", [executable])
+		conn.commit()
+		config_dict['executable'] = executable
             
 
         cursor.execute("SELECT path, key, recurse FROM library_paths")
         lib_paths = cursor.fetchall()
         template = env.get_template("settings.tpl")
-        return template.render(playing=controls.get_playing(),lib_paths = lib_paths, port = config_dict['port']) 
+        return template.render(playing=controls.get_playing(),lib_paths = lib_paths, config_dict = config_dict) 
     index.exposed = True
     style.exposed = True
     music.exposed = True

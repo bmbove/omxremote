@@ -7,44 +7,45 @@ import subprocess
 conn = sqlite3.connect("remote.db")
 cursor = conn.cursor()
 
-def start(executable, file_key, p):
+def start(executable, cmd_args, file_key, p):
     conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()
+
     try:
         while p.poll() == None:
             send_cmd(p, "q")
             update_status("stopped")
     except:
         pass
+
     cursor.execute("SELECT path, name FROM library WHERE key=?", [file_key])
     path = cursor.fetchone()
 
-    cmd_tup = [executable, '-fs', path[0]]
-    pipe = subprocess.PIPE
-
-    if executable == '/usr/bin/omxplayer':
-        try:
-            os.remove('fifo')
-            os.mkfifo('fifo')
-        except:
-            sys.exit("Could not create pipe 'fifo'")
-        cmd_tup = [exectuable, '-o hdmi', path[0], '< fifo', '&']
-        pipe = os.open('fifo', os.O_RDONLY|os.O_NONBLOCK)
+    try:
+        os.remove('fifo')
+        os.mkfifo('fifo')
+    except:
+        sys.exit("Could not create pipe 'fifo'")
+    cmd_tup = [executable]
+    path_list = [path[0]]
+    cmd_tup = cmd_tup + cmd_args.split(' ')
+    cmd_tup = cmd_tup + path_list
+    print cmd_tup
+    pipe = os.open('fifo', os.O_NONBLOCK)
 
     p = subprocess.Popen(cmd_tup, stdin=pipe)
-    if executable == '/usr/bin/omxplayer':
-        pipe_write = os.open('fifo', os.O_WRONLY|os.O_NONBLOCK)
-        pipe_write.write('.')
+
     while get_playing() != path[1]:
         update_status('playing', path[1])
+
     while p.poll() != None:
         time.sleep(1)
     return p
 
 def send_cmd(p, cmd):
-    #pipe_write = os.open('fifo', os.O_WRONLY|os.O_NONBLOCK)
     try:
-        p.stdin.write(cmd)
+        with open("fifo","w") as fp:
+            fp.write(cmd)
     except:
         pass
     return p
