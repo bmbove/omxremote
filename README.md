@@ -1,6 +1,4 @@
 omxremote
 =========
 
-LAMP-based web control for omxplayer
-
-No files yet - git just initialized.
+python web control for omxplayer
