@@ -20,7 +20,6 @@ def startup_checks():
         fifo_exists = stat.S_ISFIFO(os.stat('fifo').st_mode)
     except OSError as e:
         fifo_exists = False 
-    print fifo_exists
     if fifo_exists == False:
         try:
             os.mkfifo('fifo')
@@ -28,29 +27,55 @@ def startup_checks():
             os.remove('fifo')
             os.mkfifo('fifo')
     
+    # Check if sqlite db file exists. If not... initialize it.
     if os.path.isfile('omxremote.db') == False:
-        
+        conn = sqlite3.connect("omxremote.db")
+        cursor = conn.cursor()
+        sql = "CREATE TABLE library (key INTEGER PRIMARY KEY AUTOINCREMENT, name, path UNIQUE, type, size)"
+        cursor.execute(sql)
+        conn.commit()
+    else:
+        conn = sqlite3.connect("omxremote.db")
+        cursor = conn.cursor()
+        sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='library'"
+        cursor.execute(sql)
+        cursor.fetchall()
+        if cursor.rowcount == 0:
+            cursor.execute("CREATE TABLE library (key INTEGER PRIMARY KEY AUTOINCREMENT, name, path UNIQUE, type, size)")
+            conn.commit()
+
+def add_path_to_library(path, recurse = 1):
+    file_exts = ['.mp3', '.avi', '.mp4', '.mkv', '.flac']
+    conn = sqlite3.connect("omxremote.db")
+    cursor = conn.cursor()
+    dirs = os.walk(path)
+    if recurse == 1:
+        for directory in dirs:
+            for filename in directory[2]:
+                if os.path.splitext(filename)[1] in file_exts:
+                    #print directory[0].strip() + "/" + filename.strip()
+                    path = directory[0].strip() + "/" + filename.strip()
+                    name = os.path.splitext(filename)[0]
+                    ext = os.path.splitext(filename)[1]
+                    size = os.path.getsize(path)
+                    try:
+                        cursor.execute("INSERT INTO library (name, path, type, size) VALUES ( ?, ?, ?, ?)", (name, path, ext, size))
+                    except sqlite3.IntegrityError:
+                            continue
+    conn.commit()
+
+
 if __name__ == '__main__':
     startup_checks()
-    #conn = sqlite3.connect("omxremote.db")
-    #cursor = conn.cursor()
-    #create table
-    #cursor.execute("""CREATE TABLE library
-    #                    (key, file, size)
-    #                """)
 
-    #cursor.execute("INSERT INTO library VALUES ('1', 'home/brian/Music/The Wallflowers - Cinderella.mp3', '383420')")
-    #conn.commit()
-    #sql = "SELECT file FROM library WHERE key=1"
-    #for row in cursor.execute(sql):
-    #    print row
-    #    file = row[0]
-    #print file
     if sys.argv[1] == 'start':
         start("/home/brian/Music/The Wallflowers - Cinderella.mp3")
     if sys.argv[1] == 'pause':
         pause()
     if sys.argv[1] == 'stop':
         os.system('echo -n "q" > fifo')
+    if sys.argv[1] == 'next':
+        os.system('echo -n "" > fifo')
+    #add_path_to_library("/home/brian/usb")
 
 
