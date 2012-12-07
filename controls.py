@@ -9,40 +9,27 @@ def start(file):
     cmd = 'mplayer "' + file + '" < fifo > /dev/null 2>&1 &'
     os.system(cmd)
     os.system('echo -n . > fifo')
+    update_status('playing')
 
 def pause():
-        os.system('echo -n "p" > fifo')
+    os.system('echo -n "p" > fifo')
 
-def startup_checks():
+def stop():
+    os.system('echo -n "q" > fifo')
+    update_status('stopped')
 
-    # Check if pipe exists. If not, create it.
-    try:
-        fifo_exists = stat.S_ISFIFO(os.stat('fifo').st_mode)
-    except OSError as e:
-        fifo_exists = False 
-    if fifo_exists == False:
-        try:
-            os.mkfifo('fifo')
-        except OSError:
-            os.remove('fifo')
-            os.mkfifo('fifo')
-    
-    # Check if sqlite db file exists. If not... initialize it.
-    if os.path.isfile('omxremote.db') == False:
-        conn = sqlite3.connect("omxremote.db")
-        cursor = conn.cursor()
-        sql = "CREATE TABLE library (key INTEGER PRIMARY KEY AUTOINCREMENT, name, path UNIQUE, type, size)"
-        cursor.execute(sql)
-        conn.commit()
-    else:
-        conn = sqlite3.connect("omxremote.db")
-        cursor = conn.cursor()
-        sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='library'"
-        cursor.execute(sql)
-        cursor.fetchall()
-        if cursor.rowcount == 0:
-            cursor.execute("CREATE TABLE library (key INTEGER PRIMARY KEY AUTOINCREMENT, name, path UNIQUE, type, size)")
-            conn.commit()
+def update_status(status):
+    conn = sqlite3.connect("omxremote.db")
+    cursor = conn.cursor()
+    sql = "UPDATE status SET status='" + status + "'"
+    cursor.execute(sql)
+    conn.commit()
+
+def get_status():
+    conn = sqlite3.connect("omxremote.db")
+    cursor = conn.cursor()
+    result = cursor.execute("SELECT status FROM status")
+    return result.fetchone()[0]
 
 def add_path_to_library(path, recurse = 1):
     file_exts = ['.mp3', '.avi', '.mp4', '.mkv', '.flac']

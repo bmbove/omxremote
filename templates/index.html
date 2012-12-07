@@ -1,0 +1,13 @@
+<h1>Files</h1>
+<form action='index' method='post'>
+<br/><br/>
+
+<button type='submit' name='stop' value='1'>Stop</button>
+
+<br/><br/>
+<ul>
+    {% for file in files %}
+    <li><button type='submit' name='play' value='{{file[0]|e}}'> Play </button>{{file[1]|e}}</li>
+    {% endfor %}
+</ul>
+</form>
