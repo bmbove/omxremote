@@ -5,22 +5,15 @@ import stat
 import jinja2
 import controls
 import sqlite3
+import subprocess
+import time
 
 env = jinja2.Environment(loader = jinja2.FileSystemLoader('./templates'))
 
-def startup_checks():
+p = False
+exit = 0
 
-    # Check if pipe exists. If not, create it.
-    try:
-        fifo_exists = stat.S_ISFIFO(os.stat('fifo').st_mode)
-    except OSError as e:
-        fifo_exists = False
-    if fifo_exists == False:
-        try:
-            os.mkfifo('fifo')
-        except OSError:
-            os.remove('fifo')
-            os.mkfifo('fifo')
+def startup_checks():
 
     # Check if sqlite db file exists. If not... initialize it.
     conn = sqlite3.connect("omxremote.db")
@@ -36,23 +29,24 @@ def startup_checks():
     conn.commit()
 
 class omxremote:
-    def index(self, play = 0, stop = 0):
+    def index(self, play = 0, stop = 0, quit = 0):
+        global p
+        global exit
+        exit = quit
         conn = sqlite3.connect("omxremote.db")
         conn.text_factory = str
         cursor = conn.cursor()
         print play
         if play > 0:
-            if controls.get_status()  == 'playing':
-                controls.stop()
-
             sql = "SELECT path FROM library WHERE key=" + play
             cursor.execute(sql)
             path = cursor.fetchone()
-            controls.start(path[0])
-            controls.pause()
+            p = controls.start(path[0], p)
 
         if stop > 0:
-            controls.stop()
+             controls.stop(p)
+        if quit > 0:
+            sys.exit("Exiting omxremote")
 
         template = env.get_template("index.html")
         sql = "SELECT key, path FROM library"
@@ -64,5 +58,20 @@ class omxremote:
 
 startup_checks()
 
-cherrypy.quickstart(omxremote())
+cherrypy.config.update(
+    {'server.socket_host': '0.0.0.0'})
+cherrypy.engine.signal_handler.subscribe()
+cherrypy.tree.mount(omxremote(), '/')
+cherrypy.engine.start()
 
+while 1:
+    if exit > 0:
+        sys.exit("Exiting omxremote")
+    try:
+        if p.poll() != None:
+            controls.update_status('stopped')
+       # print p.poll()
+    except:
+        pass
+    #time.sleep(1)
+#cherrypy.quickstart(omxremote())

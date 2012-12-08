@@ -4,21 +4,37 @@ import time
 import os
 import sqlite3
 import stat
+import subprocess
 
-def start(file):
-    cmd = 'mplayer "' + file + '" < fifo > /dev/null 2>&1 &'
-    os.system(cmd)
-    os.system('echo -n . > fifo')
+def start(file, p):
+    try:
+        while p.poll() == None:
+            stop(p)
+    except:
+        pass
+
+    cmd_tup = ['mplayer', file]
+    p = subprocess.Popen(cmd_tup, stdin=subprocess.PIPE, stdout=None, stderr=None)
     update_status('playing')
+    while p.poll() != None:
+        time.sleep(1)
+    return p
 
-def pause():
-    os.system('echo -n "p" > fifo')
+def pause(p):
+    try:
+        p.communicate(input='p')
+    except:
+        pass
 
-def stop():
-    os.system('echo -n "q" > fifo')
-    update_status('stopped')
+def stop(p):
+    try:
+        p.terminate()
+        update_status('stopped')
+    except:
+        pass
+    return p
 
-def update_status(status):
+def update_status(status, pid = 0):
     conn = sqlite3.connect("omxremote.db")
     cursor = conn.cursor()
     sql = "UPDATE status SET status='" + status + "'"
@@ -30,6 +46,12 @@ def get_status():
     cursor = conn.cursor()
     result = cursor.execute("SELECT status FROM status")
     return result.fetchone()[0]
+
+def process_status(p):
+    try:
+        return p.poll()
+    except:
+        return True 
 
 def add_path_to_library(path, recurse = 1):
     file_exts = ['.mp3', '.avi', '.mp4', '.mkv', '.flac']
