@@ -21,7 +21,8 @@ def start(executable, file_key, p):
     path = cursor.fetchone()
 
     cmd_tup = [executable, path[0]]
-    p = subprocess.Popen(cmd_tup, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(cmd_tup, stdin=subprocess.PIPE)
+
     update_status('playing', path[1])
     while p.poll() != None:
         time.sleep(1)
@@ -30,16 +31,46 @@ def start(executable, file_key, p):
 def pause(p):
     try:
         p.stdin.write("p")
+        if get_status() == 'playing':
+            update_status("paused")
+        else:
+            update_status("playing")
     except:
         pass
 
 def stop(p):
     try:
+        p.stdin.write("q")
         p.terminate()
     except:
         pass
     update_status("stopped")
     return p
+def vol_up(p):
+    try:
+        for i in range(6):
+            p.stdin.write("0")
+    except:
+        pass
+
+def vol_down(p):
+    try:
+        for i in range(6):
+            p.stdin.write("9")
+    except:
+        pass
+
+def ff(p):
+    try:
+        p.stdin.write("]")
+    except:
+        pass
+
+def rw(p):
+    try:
+        p.stdin.write("[")
+    except:
+        pass
 
 def update_status(status, name='None'):
     conn = sqlite3.connect("remote.db")
@@ -70,18 +101,29 @@ def add_path_to_library(path, recurse = 1):
     file_exts = ['.mp3', '.avi', '.mp4', '.mkv', '.flac']
     conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()
-    dirs = os.walk(path)
     if recurse == 1:
+        dirs = os.walk(path)
         for directory in dirs:
             for filename in directory[2]:
                 if os.path.splitext(filename)[1] in file_exts:
                     #print directory[0].strip() + "/" + filename.strip()
-                    path = directory[0].strip() + "/" + filename.strip()
+                    full_path = directory[0].strip() + "/" + filename.strip()
                     name = os.path.splitext(filename)[0]
                     ext = os.path.splitext(filename)[1]
-                    size = os.path.getsize(path)
+                    size = os.path.getsize(full_path)
                     try:
-                        cursor.execute("INSERT INTO library (name, path, type, size) VALUES ( ?, ?, ?, ?)", (name, path, ext, size))
+                        cursor.execute("INSERT INTO library (name, path, type, size) VALUES ( ?, ?, ?, ?)", [name, full_path, ext, size])
                     except sqlite3.IntegrityError:
                             continue
+    else:
+        for filename in os.listdir(path):
+            if os.path.splitext(filename)[1] in file_exts:
+                full_path = path.stip() + filename.strip()
+                name = os.path.splitext(filename)[0]
+                ext = os.path.splitext(filename)[1]
+                size = os.path.getsize(full_path)
+                try:
+                    cursor.execute("INSERT INTO library (name, path, type, size) VALUES (?, ?, ?, ?)", [name, full_path, ext, size])
+                except:
+                    pass
     conn.commit()

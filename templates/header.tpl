@@ -16,6 +16,20 @@
 
     <link rel="stylesheet" href="style" type="text/css" media="screen, projection" />
 
+<script>
+function control(str)
+{
+var xmlhttp;    
+if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+  xmlhttp=new XMLHttpRequest();
+  }
+xmlhttp.open("GET","remcontrols?"+str+"=1",true);
+xmlhttp.send();
+}
+</script>
+
+
 </head>
 
 <body>
@@ -24,10 +38,13 @@
 
     <div id="header">
         <div id='current_header'>
-           <a href='index'><img src='/images/remote.png' width=50 height=50 /></a> Currently Playing: {{playing}}
-            <form action='index' method='post'>
-                <button type='submit' value='1' name='pause'> Pause </button>&nbsp;<button type='submit' value='1' name='stop'> Stop </button>
-            </form>
+           <a href='index'><img src='/images/remote.png' width=50 height=50 /></a> Currently Playing: {{playing}}<br/>
+                <button onclick="control('pause')"> Pause </button>&nbsp;
+                <button onclick="control('stop')"> Stop </button>
+                <button onclick="control('vol_down')"> Vol - </button>&nbsp;
+                <button onclick="control('vol_up')"> Vol + </button>&nbsp;
+                <button onclick="control('rw')"> << </button>&nbsp;
+                <button onclick="control('ff')"> >> </button>
         </div>
 
     </div><!-- #header-->

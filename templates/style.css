@@ -101,3 +101,8 @@ input {
     text-decoration: none;
     color:purple;
 }
+
+.small_red{
+    font-size:small;
+    color:red;
+}

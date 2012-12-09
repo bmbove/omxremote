@@ -42,6 +42,28 @@ def load_config():
         config_dict[row[0]] = value 
 
 class omxremote:
+    def remcontrols(self, play = 0, pause=0, stop = 0, quit = 0, vol_up = 0, vol_down = 0, ff = 0, rw = 0, next_file = 0, prev_file = 0):
+        global p
+        if pause > 0:
+            controls.pause(p)
+
+        if stop > 0:     
+            controls.stop(p)
+
+        if vol_up > 0:
+            controls.vol_up(p)
+
+        if vol_down > 0:
+            controls.vol_down(p)
+
+        if ff > 0:
+            controls.ff(p)
+        
+        if rw > 0:
+            controls.rw(p)
+
+        return 0
+
     def index(self, pause = 0, play = 0, stop = 0, quit = 0):
         global p
         global exit
@@ -96,12 +118,12 @@ class omxremote:
     def search(self):
         return "search"
 
-    def settings(self, remove = '', add = '', add_dir = '', submit = '', port = ''):
+    def settings(self, remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '0'):
         conn = sqlite3.connect("remote.db")
         cursor = conn.cursor()
         
         if add_dir != '':
-            cursor.execute("INSERT INTO library_paths (path, recurse, monitor) VALUES (?, ?, ?)", [add_dir, 1, 1])
+            cursor.execute("INSERT INTO library_paths (path, recurse, monitor) VALUES (?, ?, ?)", [add_dir, recurse, 1])
             conn.commit()
             controls.add_path_to_library(add_dir)
 
@@ -109,14 +131,19 @@ class omxremote:
             cursor.execute("UPDATE config SET value=? WHERE name='port'", [port])
             conn.commit()
         if remove != '':
-            cursor.execute("SELECT path FROM library_paths WHERE key=?", [remove])
-            path = cursor.fetchone()[0]
+            cursor.execute("SELECT path, recurse FROM library_paths WHERE key=?", [remove])
+            row = cursor.fetchone()
+            path = row[0]
+            path_recurse = row[1] 
             cursor.execute("DELETE FROM library_paths WHERE key=?", [remove])
-            cursor.execute("DELETE FROM library WHERE path LIKE ?", ['%' + path + '%']) 
+            if path_recurse == 1:
+                cursor.execute("DELETE FROM library WHERE path LIKE ?", ['%' + path + '%']) 
+            else:
+                cursor.execute("DELETE FROM library WHERE path=?", [path])
             conn.commit()
             
 
-        cursor.execute("SELECT path, key FROM library_paths")
+        cursor.execute("SELECT path, key, recurse FROM library_paths")
         lib_paths = cursor.fetchall()
         template = env.get_template("settings.tpl")
         return template.render(playing=controls.get_playing(),lib_paths = lib_paths, port = config_dict['port']) 
@@ -126,7 +153,7 @@ class omxremote:
     videos.exposed = True
     settings.exposed = True
     search.exposed = True
-
+    remcontrols.exposed = True
 
 def main():
     global env
