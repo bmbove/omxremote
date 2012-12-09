@@ -24,7 +24,7 @@
 
     <div id="header">
         <div id='current_header'>
-            Currently Playing: {{playing}}
+           <a href='index'><img src='/images/remote.png' width=50 height=50 /></a> Currently Playing: {{playing}}
             <form action='index' method='post'>
                 <button type='submit' value='1' name='pause'> Pause </button>&nbsp;<button type='submit' value='1' name='stop'> Stop </button>
             </form>

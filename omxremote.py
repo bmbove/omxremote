@@ -16,36 +16,44 @@ def startup_checks():
 
     # Check if sqlite db file exists. If not... initialize it.
     cursor.execute("CREATE TABLE IF NOT EXISTS library (key INTEGER PRIMARY KEY AUTOINCREMENT, name, path UNIQUE, type, size)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS status (key PRIMARY KEY, status, name)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS status (key INTEGER PRIMARY KEY AUTOINCREMENT, status, name)")
     cursor.execute("INSERT OR REPLACE INTO status VALUES ('0', 'stopped', 'None')")
-    cursor.execute("CREATE TABLE IF NOT EXISTS library_paths (key PRIMARY KEY, path, recurse, monitor)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS playlists (key PRIMARY KEY, name, file_keys)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS config (key PRIMARY KEY, port, executable)")
-    cursor.execute("INSERT OR IGNORE INTO config VALUES (?, ?, ?)", [0, 8080, '/usr/bin/mplayer'])
+    cursor.execute("CREATE TABLE IF NOT EXISTS library_paths (key INTEGER PRIMARY KEY AUTOINCREMENT, path, recurse, monitor)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS playlists (key INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, file_keys)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS config (key INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, value)")
+    cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", ['port', '8080'])
+    cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", ['executable', '/usr/bin/mplayer'])
     conn.commit()
 
 def load_config():
-    global port
-    global executable
+    global config_dict 
+    config_dict = {'name':'value'}
     conn = sqlite3.connect("remote.db")
+    conn.text_factory = str
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM config")
-    row = cursor.fetchone()
-    port = row[1]
-    executable = row[2]
+    cursor.execute("SELECT name, value FROM config")
+    
+    for row in cursor.fetchall():
+        print row
+        if row[0] =='port':
+            value = int(row[1])
+        else:
+            value = row[1]
+        config_dict[row[0]] = value 
 
 class omxremote:
     def index(self, pause = 0, play = 0, stop = 0, quit = 0):
         global p
         global exit
         global env
+        global config_dict
         exit = quit
 
         conn = sqlite3.connect("remote.db")
         cursor = conn.cursor()
 
         if play > 0:
-            p = controls.start(executable, play, p)
+            p = controls.start(config_dict['executable'], play, p)
 
         if stop > 0:
              controls.stop(p)
@@ -85,25 +93,35 @@ class omxremote:
         row = cursor.fetchall()
         return template.render(playing=controls.get_playing(), files = row)
 
-    def settings(self):
-        return "settings"
-
     def search(self):
         return "search"
-    def dir_list(self):
-        dir_list = sorted(os.listdir('/'))
-        dir_list.sort()
-        dir_string = ''
-        for name in os.listdir('/'):
-            dir_string += name + '\n'
-        return dir_string 
+
+    def settings(self, remove = '', add = '', add_dir = '', submit = '', port = ''):
+        conn = sqlite3.connect("remote.db")
+        cursor = conn.cursor()
+        
+        if add_dir != '':
+            cursor.execute("INSERT INTO library_paths (path, recurse, monitor) VALUES (?, ?, ?)", [add_dir, 1, 1])
+            conn.commit()
+            controls.add_path_to_library(add_dir)
+
+        if port != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='port'", [port])
+            conn.commit()
+        if remove != '':
+            cursor.execute("DELETE FROM library_paths WHERE key=?", [remove])
+            conn.commit()
+
+        cursor.execute("SELECT path, key FROM library_paths")
+        lib_paths = cursor.fetchall()
+        template = env.get_template("settings.tpl")
+        return template.render(playing=controls.get_playing(),lib_paths = lib_paths, port = config_dict['port']) 
     index.exposed = True
     style.exposed = True
     music.exposed = True
     videos.exposed = True
     settings.exposed = True
     search.exposed = True
-    dir_list.exposed = True
 
 
 def main():
@@ -115,10 +133,7 @@ def main():
     p = False
     global exit
     exit = 0
-    global port
-    port = 0
-    global executable
-    executable = ''
+    global config_dict
 
     startup_checks()
     load_config()
@@ -126,7 +141,7 @@ def main():
     print os.path.join(current_dir, 'templates', 'images')
     print current_dir
     cherrypy.config.update('cherrypy.config')
-    cherrypy.config.update({'server.socket_port': port,
+    cherrypy.config.update({'server.socket_port': config_dict['port'],
                             })
     cherrypy.engine.signal_handler.subscribe()
     cherrypy.tree.mount(omxremote(), '/', 'site.config')
