@@ -6,45 +6,58 @@ import sqlite3
 import stat
 import subprocess
 
-def start(file, p):
+conn = sqlite3.connect("remote.db")
+cursor = conn.cursor()
+
+def start(executable, file_key, p):
+    conn = sqlite3.connect("remote.db")
+    cursor = conn.cursor()
     try:
         while p.poll() == None:
             stop(p)
     except:
         pass
+    cursor.execute("SELECT path, name FROM library WHERE key=?", [file_key])
+    path = cursor.fetchone()
 
-    cmd_tup = ['mplayer', file]
-    p = subprocess.Popen(cmd_tup, stdin=subprocess.PIPE, stdout=None, stderr=None)
-    update_status('playing')
+    cmd_tup = [executable, path[0]]
+    p = subprocess.Popen(cmd_tup, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    update_status('playing', path[1])
     while p.poll() != None:
         time.sleep(1)
     return p
 
 def pause(p):
     try:
-        p.communicate(input='p')
+        p.stdin.write("p")
     except:
         pass
 
 def stop(p):
     try:
         p.terminate()
-        update_status('stopped')
     except:
         pass
+    update_status("stopped")
     return p
 
-def update_status(status, pid = 0):
-    conn = sqlite3.connect("omxremote.db")
+def update_status(status, name='None'):
+    conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()
-    sql = "UPDATE status SET status='" + status + "'"
-    cursor.execute(sql)
-    conn.commit()
+    while get_status() != status:
+        cursor.execute("UPDATE status SET status=?, name=?", [status, name])
+        conn.commit()
 
 def get_status():
-    conn = sqlite3.connect("omxremote.db")
+    conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()
     result = cursor.execute("SELECT status FROM status")
+    return result.fetchone()[0]
+
+def get_playing():
+    conn = sqlite3.connect("remote.db")
+    cursor = conn.cursor()
+    result = cursor.execute("SELECT name FROM status")
     return result.fetchone()[0]
 
 def process_status(p):
@@ -55,7 +68,7 @@ def process_status(p):
 
 def add_path_to_library(path, recurse = 1):
     file_exts = ['.mp3', '.avi', '.mp4', '.mkv', '.flac']
-    conn = sqlite3.connect("omxremote.db")
+    conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()
     dirs = os.walk(path)
     if recurse == 1:
@@ -72,19 +85,3 @@ def add_path_to_library(path, recurse = 1):
                     except sqlite3.IntegrityError:
                             continue
     conn.commit()
-
-
-if __name__ == '__main__':
-    startup_checks()
-
-    if sys.argv[1] == 'start':
-        start("/home/brian/Music/The Wallflowers - Cinderella.mp3")
-    if sys.argv[1] == 'pause':
-        pause()
-    if sys.argv[1] == 'stop':
-        os.system('echo -n "q" > fifo')
-    if sys.argv[1] == 'next':
-        os.system('echo -n "" > fifo')
-    #add_path_to_library("/home/brian/usb")
-
-
