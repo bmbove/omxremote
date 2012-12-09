@@ -90,12 +90,20 @@ class omxremote:
 
     def search(self):
         return "search"
+    def dir_list(self):
+        dir_list = sorted(os.listdir('/'))
+        dir_list.sort()
+        dir_string = ''
+        for name in os.listdir('/'):
+            dir_string += name + '\n'
+        return dir_string 
     index.exposed = True
     style.exposed = True
     music.exposed = True
     videos.exposed = True
     settings.exposed = True
     search.exposed = True
+    dir_list.exposed = True
 
 
 def main():
