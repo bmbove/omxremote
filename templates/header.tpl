@@ -17,14 +17,22 @@
     <link rel="stylesheet" href="style" type="text/css" media="screen, projection" />
 
 <script>
-function control(str)
+function control(str, value)
 {
 var xmlhttp;    
 if (window.XMLHttpRequest)
   {// code for IE7+, Firefox, Chrome, Opera, Safari
   xmlhttp=new XMLHttpRequest();
   }
-xmlhttp.open("GET","remcontrols?"+str+"=1",true);
+value = typeof value !== 'undefined' ? value : 1;
+xmlhttp.onreadystatechange=function()
+  {
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+    {
+    document.getElementById("current_file").innerHTML=xmlhttp.responseText;
+    }
+  }
+xmlhttp.open("GET","remcontrols?"+str+"="+value,true);
 xmlhttp.send();
 }
 </script>
@@ -38,7 +46,7 @@ xmlhttp.send();
 
     <div id="header">
         <div id='current_header'>
-           <a href='index'><img src='/images/remote.png' width=50 height=50 /></a> Currently Playing: {{playing}}<br/>
+           <a href='index'><img src='/images/remote.png' width=50 height=50 /></a> Currently Playing: <div id='current_file'>{{playing}}</div><br/>
                 <button onclick="control('pause')"> Pause </button>&nbsp;
                 <button onclick="control('stop')"> Stop </button>
                 <button onclick="control('vol_down')"> Vol - </button>&nbsp;

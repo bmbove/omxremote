@@ -45,27 +45,35 @@ class omxremote:
     def remcontrols(self, play = 0, pause=0, stop = 0, quit = 0, vol_up = 0, vol_down = 0, ff = 0, rw = 0, next_file = 0, prev_file = 0):
         global p
         if pause > 0:
-            controls.pause(p)
+            controls.send_cmd(p, "p")
+            if controls.get_status() == 'playing':
+                controls.update_status("paused", controls.get_playing())
+            else:
+                controls.update_status("playing", controls.get_playing())
 
         if stop > 0:     
-            controls.stop(p)
+            p = controls.send_cmd(p, "q")
+            controls.update_status("stopped")
 
         if vol_up > 0:
-            controls.vol_up(p)
+            for i in range(7):
+                controls.send_cmd(p, "0")
 
         if vol_down > 0:
-            controls.vol_down(p)
+            for i in range(7):
+                controls.send_cmd(p, "9")
 
         if ff > 0:
-            controls.ff(p)
+            controls.send_cmd(p, "]")
         
         if rw > 0:
-            controls.rw(p)
+            controls.send_cmd(p, "[")
+        if play > 0:
+            p = controls.start(config_dict['executable'], play, p)
+        
+        return controls.get_playing()
 
-        return 0
-
-    def index(self, pause = 0, play = 0, stop = 0, quit = 0):
-        global p
+    def index(self, quit = 0):
         global exit
         global env
         global config_dict
@@ -74,17 +82,8 @@ class omxremote:
         conn = sqlite3.connect("remote.db")
         cursor = conn.cursor()
 
-        if play > 0:
-            p = controls.start(config_dict['executable'], play, p)
-
-        if stop > 0:
-             controls.stop(p)
-
         if quit > 0:
             sys.exit("Exiting omxremote")
-
-        if pause > 0:
-            controls.pause(p)
 
         template = env.get_template("index.tpl")
         sql = "SELECT key, path FROM library"

@@ -14,7 +14,7 @@ def start(executable, file_key, p):
     cursor = conn.cursor()
     try:
         while p.poll() == None:
-            stop(p)
+            send_cmd(p, "q")
     except:
         pass
     cursor.execute("SELECT path, name FROM library WHERE key=?", [file_key])
@@ -28,49 +28,12 @@ def start(executable, file_key, p):
         time.sleep(1)
     return p
 
-def pause(p):
+def send_cmd(p, cmd):
     try:
-        p.stdin.write("p")
-        if get_status() == 'playing':
-            update_status("paused")
-        else:
-            update_status("playing")
+        p.stdin.write(cmd)
     except:
         pass
-
-def stop(p):
-    try:
-        p.stdin.write("q")
-        p.terminate()
-    except:
-        pass
-    update_status("stopped")
     return p
-def vol_up(p):
-    try:
-        for i in range(6):
-            p.stdin.write("0")
-    except:
-        pass
-
-def vol_down(p):
-    try:
-        for i in range(6):
-            p.stdin.write("9")
-    except:
-        pass
-
-def ff(p):
-    try:
-        p.stdin.write("]")
-    except:
-        pass
-
-def rw(p):
-    try:
-        p.stdin.write("[")
-    except:
-        pass
 
 def update_status(status, name='None'):
     conn = sqlite3.connect("remote.db")
