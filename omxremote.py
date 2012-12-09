@@ -109,8 +109,12 @@ class omxremote:
             cursor.execute("UPDATE config SET value=? WHERE name='port'", [port])
             conn.commit()
         if remove != '':
+            cursor.execute("SELECT path FROM library_paths WHERE key=?", [remove])
+            path = cursor.fetchone()[0]
             cursor.execute("DELETE FROM library_paths WHERE key=?", [remove])
+            cursor.execute("DELETE FROM library WHERE path LIKE ?", ['%' + path + '%']) 
             conn.commit()
+            
 
         cursor.execute("SELECT path, key FROM library_paths")
         lib_paths = cursor.fetchall()
