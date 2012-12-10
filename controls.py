@@ -1,9 +1,7 @@
 #!/usr/bin/python
-import sys
 import time
 import os
 import sqlite3
-import stat
 import subprocess
 
 conn = sqlite3.connect("remote.db")
@@ -15,6 +13,7 @@ def start(executable, file_key, p):
     try:
         while p.poll() == None:
             send_cmd(p, "q")
+            update_status("stopped")
     except:
         pass
     cursor.execute("SELECT path, name FROM library WHERE key=?", [file_key])
@@ -22,8 +21,8 @@ def start(executable, file_key, p):
 
     cmd_tup = [executable, path[0]]
     p = subprocess.Popen(cmd_tup, stdin=subprocess.PIPE)
-
-    update_status('playing', path[1])
+    while get_playing() != path[1]:
+        update_status('playing', path[1])
     while p.poll() != None:
         time.sleep(1)
     return p
@@ -38,7 +37,7 @@ def send_cmd(p, cmd):
 def update_status(status, name='None'):
     conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()
-    while get_status() != status:
+    while (get_status() != status and get_playing() != name):
         cursor.execute("UPDATE status SET status=?, name=?", [status, name])
         conn.commit()
 

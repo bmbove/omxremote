@@ -1,7 +1,6 @@
 import cherrypy
 import os
 import sys
-import stat
 import jinja2
 import controls
 import sqlite3
@@ -34,7 +33,6 @@ def load_config():
     cursor.execute("SELECT name, value FROM config")
     
     for row in cursor.fetchall():
-        print row
         if row[0] =='port':
             value = int(row[1])
         else:
@@ -114,8 +112,8 @@ class omxremote:
         row = cursor.fetchall()
         return template.render(playing=controls.get_playing(), files = row)
 
-    def search(self):
-        return "search"
+    def playlist(self):
+        return "playlist"
 
     def settings(self, remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '0'):
         conn = sqlite3.connect("remote.db")
@@ -151,7 +149,7 @@ class omxremote:
     music.exposed = True
     videos.exposed = True
     settings.exposed = True
-    search.exposed = True
+    playlist.exposed = True
     remcontrols.exposed = True
 
 def main():
@@ -168,8 +166,6 @@ def main():
     startup_checks()
     load_config()
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    print os.path.join(current_dir, 'templates', 'images')
-    print current_dir
     cherrypy.config.update('cherrypy.config')
     cherrypy.config.update({'server.socket_port': config_dict['port'],
                             })
@@ -189,8 +185,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-

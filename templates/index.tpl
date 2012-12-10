@@ -10,8 +10,8 @@
         <div id='settings'>
             <a href='settings'><img src='images/settings.png' class='icon' /></a>
         </div>
-        <div id='search'>
-            <a href='search'><img src='images/search.png' class='icon' /></a>
+        <div id='playlist'>
+            <a href='playlist'><img src='images/playlist.png' class='icon' /></a>
         </div>
     </div><!-- #footer -->
 {% include 'footer.tpl' %}

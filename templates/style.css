@@ -30,17 +30,20 @@ input {
 }
 
 #header {
+    padding-left:10px;
     height: 25%;
     background: #FFE680;
 }
 
 #content {
+    padding-left:10px;
     max-width:500px;
     height: 75%;
     width:100%;
 }
 
 #file_content {
+    padding-left:10px;
     max-width:500px;
     height: 75%;
     width:100%;
@@ -70,12 +73,12 @@ input {
 }
 
 #settings{
-     width:50%;
+    width:50%;
     height:50%;
     float:left;
 }
 
-#search{
+#playlist{
     width:50%;
     height:50%;
     float:right;
