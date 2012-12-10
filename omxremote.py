@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import cherrypy
 import os
 import sys
@@ -20,9 +21,9 @@ def startup_checks():
     cursor.execute("CREATE TABLE IF NOT EXISTS library_paths (key INTEGER PRIMARY KEY AUTOINCREMENT, path, recurse, monitor)")
     cursor.execute("CREATE TABLE IF NOT EXISTS playlists (key INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, file_keys)")
     cursor.execute("CREATE TABLE IF NOT EXISTS config (key INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, value)")
-    cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", ['port', '8080'])
-    cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", ['executable', '/usr/bin/mplayer'])
-    cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", ['cmd_args', '-fs'])
+    config_dict = {'port':'8080', 'executable':'/usr/bin/mplayer', 'cmd_args':'-fs', 'pause_key':'p', 'stop_key':'q', 'vol_up_key':'0', 'vol_down_key':'9', 'ff_key':']', 'rw_key':'['}
+    for key in config_dict:
+        cursor.execute("INSERT OR IGNORE INTO config (name, value) VALUES (?, ?)", [key, config_dict[key]])
     conn.commit()
 
 def load_config():
@@ -44,29 +45,29 @@ class omxremote:
     def remcontrols(self, play = 0, pause=0, stop = 0, quit = 0, vol_up = 0, vol_down = 0, ff = 0, rw = 0, next_file = 0, prev_file = 0):
         global p
         if pause > 0:
-            controls.send_cmd(p, "p")
+            controls.send_cmd(p, config_dict['pause_key'])
             if controls.get_status() == 'playing':
                 controls.update_status("paused", controls.get_playing())
             else:
                 controls.update_status("playing", controls.get_playing())
 
         if stop > 0:     
-            p = controls.send_cmd(p, "q")
+            p = controls.send_cmd(p, config_dict['stop_key'])
             controls.update_status("stopped")
 
         if vol_up > 0:
             for i in range(7):
-                controls.send_cmd(p, "0")
+                controls.send_cmd(p, config_dict['vol_up_key'])
 
         if vol_down > 0:
             for i in range(7):
-                controls.send_cmd(p, "9")
+                controls.send_cmd(p, config_dict['vol_down_key'])
 
         if ff > 0:
-            controls.send_cmd(p, "]")
+            controls.send_cmd(p, config_dict['ff_key'])
         
         if rw > 0:
-            controls.send_cmd(p, "[")
+            controls.send_cmd(p, config_dict['rw_key'])
         if play > 0:
             p = controls.start(config_dict['executable'], config_dict['cmd_args'], play, p)
         
@@ -116,7 +117,7 @@ class omxremote:
     def playlist(self):
         return "playlist"
 
-    def settings(self, remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '0', cmd_args = '', executable = ''):
+    def settings(self, pause_key='', stop_key='', vol_up_key='', vol_down_key='', ff_key='', rw_key='', remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '0', cmd_args = '', executable = ''):
         conn = sqlite3.connect("remote.db")
         cursor = conn.cursor()
         
@@ -139,15 +140,44 @@ class omxremote:
             else:
                 cursor.execute("DELETE FROM library WHERE path=?", [path])
             conn.commit()
-	if cmd_args != '':
-		cursor.execute("UPDATE config SET value=? WHERE name='cmd_args'", [cmd_args])
-		conn.commit()
-		config_dict['cmd_args'] = cmd_args
-	if executable != '':
-		cursor.execute("UPDATE config SET value=? WHERE name='executable'", [executable])
-		conn.commit()
-		config_dict['executable'] = executable
-            
+        if cmd_args != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='cmd_args'", [cmd_args])
+            conn.commit()
+            config_dict['cmd_args'] = cmd_args
+        if executable != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='executable'", [executable])
+            conn.commit()
+            config_dict['executable'] = executable
+
+        if stop_key != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='stop_key'", [stop_key])
+            conn.commit()
+            config_dict['stop_key'] = stop_key     
+
+        if vol_up_key != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='vol_up_key'", [vol_up_key])
+            conn.commit()
+            config_dict['vol_up_key'] = vol_up_key     
+
+        if vol_down_key != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='vol_down_key'", [vol_down_key])
+            conn.commit()
+            config_dict['vol_down_key'] = vol_down_key     
+
+        if ff_key != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='ff_key'", [ff_key])
+            conn.commit()
+            config_dict['ff_key'] = ff_key     
+
+        if rw_key != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='rw_key'", [rw_key])
+            conn.commit()
+            config_dict['rw_key'] = rw_key     
+
+        if pause_key != '':
+            cursor.execute("UPDATE config SET value=? WHERE name='pause_key'", [pause_key])
+            conn.commit()
+            config_dict['pause_key'] = pause_key     
 
         cursor.execute("SELECT path, key, recurse FROM library_paths")
         lib_paths = cursor.fetchall()

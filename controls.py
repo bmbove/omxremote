@@ -3,6 +3,7 @@ import time
 import os
 import sqlite3
 import subprocess
+import sys
 
 conn = sqlite3.connect("remote.db")
 cursor = conn.cursor()
@@ -20,9 +21,11 @@ def start(executable, cmd_args, file_key, p):
 
     cursor.execute("SELECT path, name FROM library WHERE key=?", [file_key])
     path = cursor.fetchone()
-
     try:
         os.remove('fifo')
+    except:
+        pass
+    try:
         os.mkfifo('fifo')
     except:
         sys.exit("Could not create pipe 'fifo'")
