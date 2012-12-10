@@ -13,4 +13,5 @@ Set appropriate executable and command line arguments ('-o hdmi' for omxplayer u
 
 Profit?
 
+------
 Currently, button presses are set up for mplayer (was testing using mplayer). Quit, Pause, and Play are the same for omxplayer though, so those should work fine without any modification.
