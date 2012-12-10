@@ -19,8 +19,22 @@ def start(executable, file_key, p):
     cursor.execute("SELECT path, name FROM library WHERE key=?", [file_key])
     path = cursor.fetchone()
 
-    cmd_tup = [executable, path[0]]
-    p = subprocess.Popen(cmd_tup, stdin=subprocess.PIPE)
+    cmd_tup = [executable, '-fs', path[0]]
+    pipe = subprocess.PIPE
+
+    if executable == '/usr/bin/omxplayer':
+        try:
+            os.remove('fifo')
+            os.mkfifo('fifo')
+        except:
+            sys.exit("Could not create pipe 'fifo'")
+        cmd_tup = [exectuable, '-o hdmi', path[0], '< fifo', '&']
+        pipe = os.open('fifo', os.O_RDONLY|os.O_NONBLOCK)
+
+    p = subprocess.Popen(cmd_tup, stdin=pipe)
+    if executable == '/usr/bin/omxplayer':
+        pipe_write = os.open('fifo', os.O_WRONLY|os.O_NONBLOCK)
+        pipe_write.write('.')
     while get_playing() != path[1]:
         update_status('playing', path[1])
     while p.poll() != None:
@@ -28,6 +42,7 @@ def start(executable, file_key, p):
     return p
 
 def send_cmd(p, cmd):
+    #pipe_write = os.open('fifo', os.O_WRONLY|os.O_NONBLOCK)
     try:
         p.stdin.write(cmd)
     except:
