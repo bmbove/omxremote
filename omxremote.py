@@ -7,8 +7,15 @@ import controls
 import sqlite3
 import subprocess
 import time
+import signal
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
+
+def signal_handler(signal, frame):
+    print 'Ctrl+C caught... Exiting!'
+    cherrypy.engine.stop()
+    cherrypy.engine.exit()
+    sys.exit(0)
 
 def startup_checks():
     conn = sqlite3.connect("remote.db")
@@ -81,9 +88,6 @@ class omxremote:
 
         conn = sqlite3.connect("remote.db")
         cursor = conn.cursor()
-
-        if quit > 0:
-            sys.exit("Exiting omxremote")
 
         template = env.get_template("index.tpl")
         sql = "SELECT key, path FROM library"
@@ -214,6 +218,8 @@ def main():
 
     while 1:
         if exit > 0:
+            cherrypy.engine.stop()
+            cherrypy.engine.exit()
             sys.exit("Exiting omxremote")
         try:
             if all( p.poll() != None, get_status() != 'stopped'):
@@ -223,4 +229,5 @@ def main():
         time.sleep(1)
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
     main()
