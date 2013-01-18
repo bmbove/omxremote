@@ -88,6 +88,7 @@ def process_status(p):
         return True 
 
 def add_path_to_library(path, recurse = 1):
+    recurse = 1
     file_exts = ['.mp3', '.avi', '.mp4', '.mkv', '.flac']
     conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()
