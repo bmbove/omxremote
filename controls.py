@@ -91,20 +91,26 @@ def add_path_to_library(path, recurse = 1):
     file_exts = ['.mp3', '.avi', '.mp4', '.mkv', '.flac']
     conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()
+    recurse = 1
     if recurse == 1:
-        dirs = os.walk(path)
-        for directory in dirs:
-            for filename in directory[2]:
+        for root, dirs, files in os.walk(path):
+            print "Root:"
+            print root
+            print "Dirs:"
+            print dirs
+            print "Files:"
+            print files
+            for filename in files:
                 if os.path.splitext(filename)[1] in file_exts:
-                    #print directory[0].strip() + "/" + filename.strip()
-                    full_path = directory[0].strip() + "/" + filename.strip()
                     name = os.path.splitext(filename)[0]
+                    full_path = root + "/" + filename.strip()
                     ext = os.path.splitext(filename)[1]
+                    print full_path
                     size = os.path.getsize(full_path)
                     try:
                         cursor.execute("INSERT INTO library (name, path, type, size) VALUES ( ?, ?, ?, ?)", [name, full_path, ext, size])
                     except sqlite3.IntegrityError:
-                            continue
+                        continue
     else:
         for filename in os.listdir(path):
             if os.path.splitext(filename)[1] in file_exts:

@@ -143,7 +143,7 @@ class omxremote:
         
         return template.render(playing = controls.get_playing(), playlists = row)
 
-    def settings(self, pause_key='', stop_key='', vol_up_key='', vol_down_key='', ff_key='', rw_key='', remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '0', cmd_args = '', executable = ''):
+    def settings(self, pause_key='', stop_key='', vol_up_key='', vol_down_key='', ff_key='', rw_key='', remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '1', cmd_args = '', executable = ''):
         conn = sqlite3.connect("remote.db")
         cursor = conn.cursor()
         
