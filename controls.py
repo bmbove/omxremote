@@ -8,6 +8,15 @@ import sys
 conn = sqlite3.connect("remote.db")
 cursor = conn.cursor()
 
+def playlist_add(key):
+    conn = sqlite3.connect("remote.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT file_keys FROM playlists WHERE key = 1")
+    row = cursor.fetchone()
+    new_keys = str(row[0]) + str(key)
+    cursor.execute("UPDATE playlists SET file_keys = ? WHERE key = 0", [new_keys])
+    conn.commit()
+
 def start(executable, cmd_args, file_key, p):
     conn = sqlite3.connect("remote.db")
     cursor = conn.cursor()

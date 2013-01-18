@@ -35,6 +35,22 @@ xmlhttp.onreadystatechange=function()
 xmlhttp.open("GET","remcontrols?"+str+"="+value,true);
 xmlhttp.send();
 }
+
+
+function ajaxreq(type, value){
+    var xmlhttp;
+    if (window.XMLHttpRequest){
+        xmlhttp = new XMLHttpRequest();
+    }
+    value = typeof value !== 'undefined' ? value :1;
+    xmlhttp.onreadstatechange=function(){
+        if (xmlhttp.readState == 4 && xmlhttp.status == 200){
+            document.getElementById("current_file").innerHTML = xmlhttp.responseText;
+        }
+    }
+    xmlhttp.open("GET", "ajaxhandler?req_type="+type+"&value="+value, true);
+    xmlhttp.send();
+}
 </script>
 
 

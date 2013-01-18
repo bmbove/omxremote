@@ -27,6 +27,7 @@ def startup_checks():
     cursor.execute("INSERT OR REPLACE INTO status VALUES ('0', 'stopped', 'None')")
     cursor.execute("CREATE TABLE IF NOT EXISTS library_paths (key INTEGER PRIMARY KEY AUTOINCREMENT, path, recurse, monitor)")
     cursor.execute("CREATE TABLE IF NOT EXISTS playlists (key INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, file_keys)")
+    cursor.execute("INSERT OR IGNORE INTO playlists (name) VALUES(?)", ['quick list'])
     cursor.execute("CREATE TABLE IF NOT EXISTS config (key INTEGER PRIMARY KEY AUTOINCREMENT, name UNIQUE, value)")
     config_dict = {'port':'8080', 'executable':'/usr/bin/mplayer', 'cmd_args':'-fs', 'pause_key':'p', 'stop_key':'q', 'vol_up_key':'0', 'vol_down_key':'9', 'ff_key':']', 'rw_key':'['}
     for key in config_dict:
@@ -48,7 +49,21 @@ def load_config():
             value = row[1]
         config_dict[row[0]] = value 
 
+def check_dirs():
+    global config_dict
+    conn = sqlite3.connect("remote.db")
+    conn.text_factory = str
+    cursor = conn.cursor()
+    cursor.execute("")
+
+
 class omxremote:
+    def ajaxhandler(self, req_type, value):
+        if req_type == 'pl_add':
+            controls.playlist_add(value)
+            return "Added"
+
+        return 0
     def remcontrols(self, play = 0, pause=0, stop = 0, quit = 0, vol_up = 0, vol_down = 0, ff = 0, rw = 0, next_file = 0, prev_file = 0):
         global p
         if pause > 0:
@@ -119,7 +134,14 @@ class omxremote:
         return template.render(playing=controls.get_playing(), files = row)
 
     def playlist(self):
-        return "playlist"
+        conn = sqlite3.connect("remote.db")
+        cursor = conn.cursor()
+        template = env.get_template("playlist.tpl")
+        sql = "SELECT key, name FROM playlists"
+        cursor.execute(sql)
+        row = cursor.fetchall()
+        
+        return template.render(playing = controls.get_playing(), playlists = row)
 
     def settings(self, pause_key='', stop_key='', vol_up_key='', vol_down_key='', ff_key='', rw_key='', remove = '', add = '', add_dir = '', submit = '', port = '', recurse = '0', cmd_args = '', executable = ''):
         conn = sqlite3.connect("remote.db")
@@ -194,6 +216,7 @@ class omxremote:
     settings.exposed = True
     playlist.exposed = True
     remcontrols.exposed = True
+    ajaxhandler.exposed = True
 
 def main():
     global env

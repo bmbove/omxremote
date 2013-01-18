@@ -12,7 +12,7 @@ a {
     text-decoration: underline;
 }
 a:hover {
-    text-decoration: none;
+    text-decoration: underline;
 }
 p {
     margin: 0 0 18px
@@ -101,7 +101,6 @@ input {
 
 .filename a{
     font-size:medium;
-    text-decoration: none;
     color:purple;
 }
 

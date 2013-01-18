@@ -1,13 +1,11 @@
 {% include 'header.tpl' %}
 
     <div id="file_content">
-        <form action='index' method='post'>
             {% for file in files %}
-                <li class='filename'><a onclick="control('play', '{{file[0]|e}}')">{{file[1]|e}}</a>
+               <button onclick="ajaxreq('pl_add', '{{file[0]}}')" name='add' vaue=''>+PL</button> <li class='filename'><a href='#' onclick="control('play', '{{file[0]|e}}')">{{file[1]|e}}</a>
                 <hr>
             {% endfor %}
             
-         </form>
     </div><!-- #footer -->
 
 
