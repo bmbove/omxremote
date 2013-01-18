@@ -150,7 +150,7 @@ class omxremote:
         if add_dir != '':
             cursor.execute("INSERT INTO library_paths (path, recurse, monitor) VALUES (?, ?, ?)", [add_dir, recurse, 1])
             conn.commit()
-            controls.add_path_to_library(add_dir)
+            controls.add_path_to_library(add_dir, recurse)
 
         if port != '':
             cursor.execute("UPDATE config SET value=? WHERE name='port'", [port])
